@@ -1,0 +1,26 @@
+## Interface: 16001
+## Title: |TInterface\AddOns\Simulacrum\Media\icon:16|t |cffe6c35cSimulacrum|r Guild Companion
+## Notes: Guild hall, goals, roster, DKP and a loot-interest browser for the guild <Simulacrum>.
+## Author: kpapadatos
+## Version: 0.1.0
+## IconTexture: Interface\AddOns\Simulacrum\Media\icon
+## SavedVariables: SimulacrumDB
+## X-Website: https://github.com/kpapadatos/wow-forever-addon
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\lib.xml
+
+Core.lua
+Data.lua
+Widgets.lua
+UI\Main.lua
+UI\Hall.lua
+UI\Goals.lua
+UI\Roster.lua
+UI\DKP.lua
+UI\Loot.lua
+UI\Recruit.lua
+UI\Settings.lua
+Minimap.lua
