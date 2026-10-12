@@ -6,6 +6,14 @@ parchment backgrounds, gold metal frames with filigree corners, tab groups, sort
 scroll lists, buttons, inputs, selects, text areas, checkboxes, sliders, progress bars, images,
 item icons with live tooltips, and guild-synced data via addon messages.
 
+![Guild Hall](docs/hall.jpg)
+
+| Loot & Wishlist | Roster |
+| --- | --- |
+| ![Loot](docs/loot.jpg) | ![Roster](docs/roster.jpg) |
+| **DKP** | **Goals** |
+| ![DKP](docs/dkp.jpg) | ![Goals](docs/goals.jpg) |
+
 ## Tabs
 
 | Tab | What it shows |
