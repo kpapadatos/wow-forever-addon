@@ -213,6 +213,17 @@ function W.IconButton(parent, size, texture, tip, onClick)
 	return b
 end
 
+-- Rounded corners for a texture via a mask (needs mask texture support in the client)
+function W.RoundCorners(tex)
+	local parent = tex:GetParent()
+	if not parent.CreateMaskTexture then return end
+	local mask = parent:CreateMaskTexture()
+	mask:SetTexture(M .. "mask_round", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetAllPoints(tex)
+	tex:AddMaskTexture(mask)
+	return mask
+end
+
 -- ---------------------------------------------------------------------------
 -- Tab group
 -- ---------------------------------------------------------------------------
@@ -238,6 +249,7 @@ function W.Tabs(parent, defs, onSelect)
 		icon:SetPoint("LEFT", 9, 0)
 		icon:SetTexture(def.icon)
 		icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+		W.RoundCorners(icon)
 		local fs = W.GoldText(b, 13, W.FONT_TITLE)
 		fs:SetPoint("LEFT", icon, "RIGHT", 6, 0)
 		fs:SetText(def.text)

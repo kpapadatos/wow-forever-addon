@@ -78,10 +78,20 @@ def dungeons():
         save(im.resize((512, 256), Image.LANCZOS), "dungeon_" + key)
 
 
+def round_mask():
+    """Rounded-square alpha mask (anti-aliased) for icon corners."""
+    big = Image.new("L", (256, 256), 0)
+    ImageDraw.Draw(big).rounded_rectangle((0, 0, 255, 255), radius=56, fill=255)
+    a = big.resize((64, 64), Image.LANCZOS)
+    im = Image.new("RGBA", (64, 64), (255, 255, 255, 0))
+    im.putalpha(a)
+    save(im, "mask_round")
+
+
 def white():
     save(Image.new("RGBA", (8, 8), (255, 255, 255, 255)), "white")
 
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
-    banner(); parchment(); ornaments(); dungeons(); white()
+    banner(); parchment(); ornaments(); dungeons(); white(); round_mask()
