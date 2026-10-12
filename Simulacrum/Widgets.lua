@@ -73,8 +73,33 @@ end
 -- Frames
 -- ---------------------------------------------------------------------------
 
-function W.GoldBorder(frame, size)
-	W.Backdrop(frame, { edgeFile = M .. "edge_gold", edgeSize = size or 24 })
+-- Crisp outline drawn with four solid textures (no backdrop edge art).
+-- Returns the outline so its colour can be changed later with :SetColor().
+local OUTLINE = { 0.16, 0.10, 0.04, 1 }
+
+function W.Outline(frame, thickness, color)
+	thickness = thickness or 1
+	local o, edges = {}, {}
+	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+		local t = frame:CreateTexture(nil, "OVERLAY", nil, 6)
+		t:SetTexture(M .. "white")
+		if side == "TOP" or side == "BOTTOM" then
+			t:SetPoint(side .. "LEFT")
+			t:SetPoint(side .. "RIGHT")
+			t:SetHeight(thickness)
+		else
+			t:SetPoint("TOP" .. side)
+			t:SetPoint("BOTTOM" .. side)
+			t:SetWidth(thickness)
+		end
+		edges[#edges + 1] = t
+	end
+	function o:SetColor(r, g, b, a)
+		for _, t in ipairs(edges) do t:SetVertexColor(r, g, b, a or 1) end
+	end
+	o:SetColor(unpack(color or OUTLINE))
+	frame.outline = o
+	return o
 end
 
 local CORNER_COORDS = {
@@ -483,22 +508,22 @@ function W.Progress(parent, width, height)
 	local f = CreateFrame("Frame", nil, parent, BACKDROP_TEMPLATE)
 	f:SetSize(width, height or 18)
 	local bg = f:CreateTexture(nil, "BACKGROUND")
-	bg:SetPoint("TOPLEFT", 3, -3)
-	bg:SetPoint("BOTTOMRIGHT", -3, 3)
+	bg:SetPoint("TOPLEFT", 1, -1)
+	bg:SetPoint("BOTTOMRIGHT", -1, 1)
 	bg:SetColorTexture(0.08, 0.05, 0.02, 0.9)
 	local bar = CreateFrame("StatusBar", nil, f)
-	bar:SetPoint("TOPLEFT", 3, -3)
-	bar:SetPoint("BOTTOMRIGHT", -3, 3)
+	bar:SetPoint("TOPLEFT", 1, -1)
+	bar:SetPoint("BOTTOMRIGHT", -1, 1)
 	bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 	bar:SetStatusBarColor(0.95, 0.68, 0.15)
 	local spark = bar:CreateTexture(nil, "OVERLAY")
 	spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
 	spark:SetBlendMode("ADD")
 	spark:SetSize(20, (height or 18) * 2)
-	local border = CreateFrame("Frame", nil, f, BACKDROP_TEMPLATE)
+	local border = CreateFrame("Frame", nil, f)
 	border:SetAllPoints()
 	border:SetFrameLevel(bar:GetFrameLevel() + 2)
-	W.Backdrop(border, { edgeFile = M .. "edge_gold", edgeSize = 10 })
+	W.Outline(border, 1)
 	local fs = W.GoldText(border, 11)
 	fs:SetPoint("CENTER")
 	f.bar, f.text = bar, fs

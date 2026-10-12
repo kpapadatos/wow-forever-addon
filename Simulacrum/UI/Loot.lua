@@ -117,8 +117,8 @@ ns:RegisterPage({
 			local img = b:CreateTexture(nil, "ARTWORK")
 			img:SetTexture(ns.media .. "dungeon_" .. d.image)
 			img:SetTexCoord(0, 1, 0.22, 0.78)
-			img:SetPoint("TOPLEFT", 4, -4)
-			img:SetPoint("BOTTOMRIGHT", -4, 4)
+			img:SetPoint("TOPLEFT", 2, -2)
+			img:SetPoint("BOTTOMRIGHT", -2, 2)
 			b.img = img
 			local shade = b:CreateTexture(nil, "ARTWORK", nil, 1)
 			shade:SetPoint("BOTTOMLEFT", img)
@@ -131,7 +131,7 @@ ns:RegisterPage({
 			local lv = W.Text(b, 10, { 0.85, 0.8, 0.7 })
 			lv:SetPoint("BOTTOMLEFT", 10, 7)
 			lv:SetText(("Level %s  -  %d players%s"):format(d.level, d.size, d.forever and "  -  |cff66ccffForever|r" or ""))
-			W.GoldBorder(b, 12)
+			W.Outline(b, 2)
 			local hl = b:CreateTexture(nil, "HIGHLIGHT")
 			hl:SetAllPoints(img)
 			hl:SetColorTexture(1, 0.85, 0.4, 0.15)
@@ -145,14 +145,14 @@ ns:RegisterPage({
 		head:SetPoint("RIGHT")
 		head:SetHeight(124)
 		local himg = head:CreateTexture(nil, "ARTWORK")
-		himg:SetPoint("TOPLEFT", 5, -5)
-		himg:SetPoint("BOTTOMRIGHT", -5, 5)
+		himg:SetPoint("TOPLEFT", 2, -2)
+		himg:SetPoint("BOTTOMRIGHT", -2, 2)
 		local hshade = head:CreateTexture(nil, "ARTWORK", nil, 1)
 		hshade:SetPoint("TOPLEFT", himg)
 		hshade:SetPoint("BOTTOMLEFT", himg)
 		hshade:SetWidth(420)
 		W.Gradient(hshade, "HORIZONTAL", 0, 0, 0, 0.85, 0, 0, 0, 0)
-		W.GoldBorder(head, 14)
+		W.Outline(head, 2)
 		local hname = W.GoldText(head, 26, W.FONT_TITLE)
 		hname:SetPoint("TOPLEFT", 18, -16)
 		local hlvl = W.Text(head, 11, { 0.9, 0.85, 0.7 })
@@ -233,7 +233,7 @@ ns:RegisterPage({
 			for j, b in ipairs(dButtons) do
 				local v = j == i and 1 or 0.5
 				b.img:SetVertexColor(v, v, v)
-				b:SetBackdropBorderColor(1, 1, 1, j == i and 1 or 0.55)
+				if j == i then b.outline:SetColor(0.85, 0.6, 0.2, 1) else b.outline:SetColor(0.16, 0.10, 0.04, 1) end
 			end
 			himg:SetTexture(ns.media .. "dungeon_" .. d.image)
 			himg:SetTexCoord(0, 1, 0.30, 0.66)

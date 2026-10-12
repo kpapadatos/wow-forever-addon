@@ -1,7 +1,6 @@
 """
 Converts source/generated art into WoW-ready textures (32-bit uncompressed TGA, power-of-two sizes)
-in Simulacrum/Media/. Also renders the procedural gold backdrop edge.
-
+in Simulacrum/Media/. 
     python tools/build_textures.py
 """
 import math, os, random
@@ -79,52 +78,10 @@ def dungeons():
         save(im.resize((512, 256), Image.LANCZOS), "dungeon_" + key)
 
 
-def gold(t, rnd):
-    """t: 0 at the bar's centre line, 1 at its outer rim."""
-    stops = [(0.0, (255, 236, 160)), (0.25, (232, 186, 82)), (0.55, (176, 124, 38)),
-             (0.8, (120, 78, 22)), (0.92, (60, 38, 10)), (1.0, (20, 12, 4))]
-    for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
-        if t <= t1:
-            k = (t - t0) / (t1 - t0)
-            n = rnd.uniform(-8, 8)
-            return tuple(max(0, min(255, int(a + (b - a) * k + n))) for a, b in zip(c0, c1))
-    return stops[-1][1]
-
-
-def edge():
-    """Backdrop edge file: 8 cells (L, R, T, B, TL, TR, BL, BR) of S x S. Symmetric bar => rotation-proof."""
-    S, half = 32, 9.5
-    rnd = random.Random(7)
-    im = Image.new("RGBA", (S * 8, S), (0, 0, 0, 0))
-    px = im.load()
-    c = (S - 1) / 2
-
-    def put(cell, x, y, d):
-        if d <= half:
-            r, g, b = gold(d / half, rnd)
-            a = 255 if d < half - 0.8 else int(255 * (half - d) / 0.8)
-            px[cell * S + x, y] = (r, g, b, a)
-
-    for y in range(S):
-        for x in range(S):
-            for cell in range(4):
-                put(cell, x, y, abs(x - c))
-            # corners: L-shaped centre line plus a round boss where the bars meet
-            for cell, (sx, sy) in zip(range(4, 8), ((1, 1), (-1, 1), (1, -1), (-1, -1))):
-                lx, ly = (x - c) * sx, (y - c) * sy
-                if lx >= 0 and ly >= 0:
-                    d = min(abs(lx) if ly >= 0 else 99, abs(ly) if lx >= 0 else 99)
-                else:
-                    d = math.hypot(min(lx, 0), min(ly, 0))
-                d = min(d, max(0.0, math.hypot(lx, ly) - 3))
-                put(cell, x, y, d)
-    save(im, "edge_gold")
-
-
 def white():
     save(Image.new("RGBA", (8, 8), (255, 255, 255, 255)), "white")
 
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
-    banner(); parchment(); ornaments(); dungeons(); edge(); white()
+    banner(); parchment(); ornaments(); dungeons(); white()
