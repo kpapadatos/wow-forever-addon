@@ -40,9 +40,9 @@ local function build()
 	-- a slice of the banner's sky, faded, behind the title
 	local sky = header:CreateTexture(nil, "BACKGROUND", nil, 1)
 	sky:SetTexture(ns.media .. "banner")
-	sky:SetTexCoord(0.25, 0.75, 0.05 * 0.668, 0.25 * 0.668)
-	sky:SetPoint("TOPLEFT", 120, 0)
-	sky:SetPoint("BOTTOMRIGHT", -120, 0)
+	-- full banner width; a 70px-tall band keeps the header's aspect ratio (940x64)
+	sky:SetTexCoord(0, 1, 20 / 512, 90 / 512)
+	sky:SetAllPoints()
 	sky:SetAlpha(0.35)
 
 	local crest = header:CreateTexture(nil, "ARTWORK")
@@ -89,7 +89,8 @@ local function build()
 	underline:SetTexture(ns.media .. "white")
 	underline:SetVertexColor(0.55, 0.38, 0.14, 0.9)
 	underline:SetHeight(2)
-	underline:SetPoint("TOPLEFT", tabBar, "TOPLEFT", -4, 0)
+	-- the line sits directly under the tabs; tabs end exactly on its top edge
+	underline:SetPoint("TOPLEFT", tabBar, "BOTTOMLEFT", -4, 0)
 	underline:SetPoint("RIGHT", frame, "RIGHT", -24, 0)
 
 	local defs = {}
