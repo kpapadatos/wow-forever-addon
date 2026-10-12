@@ -48,12 +48,6 @@ JOBS = [
     {"id": "sm", "w": 1024, "h": 512, "seed": 108,
      "prompt": "A grand crimson-bannered monastery cathedral interior: towering gothic stained glass windows with "
                "red and gold light, rows of candles, a fanatical crusade altar with a golden sun emblem." + DUNGEON_STYLE},
-    {"id": "mc", "w": 1024, "h": 512, "seed": 105,
-     "prompt": "A colossal volcanic cavern deep within a mountain: lakes of molten lava, obsidian pillars, a towering "
-               "fire elemental lord rising from the magma in the distance, fiery orange and red glow." + DUNGEON_STYLE},
-    {"id": "ony", "w": 1024, "h": 512, "seed": 106,
-     "prompt": "A huge black dragon lair cave: a black dragon with wings spread looming over a pit full of dragon eggs "
-               "and treasure, steam vents, dark smoky volcanic rock, menacing purple and orange light." + DUNGEON_STYLE},
 ]
 
 
