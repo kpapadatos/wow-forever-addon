@@ -31,7 +31,7 @@ C.FINAL_BOSS_NAMES = {
 local SendAddonMessage = C_ChatInfo.SendAddonMessage
 
 local function now() return GetServerTime() end
-local function short(name) return name and Ambiguate(name, "none") end
+local short = ns.NormName
 
 function C:IsFinalBoss(encID, encName)
 	return self.FINAL_ENCOUNTERS[encID] or self.FINAL_BOSS_NAMES[encName] or false
@@ -130,7 +130,7 @@ function C:PartyMembers()
 	local list = { ns:PlayerName() }
 	for i = 1, 4 do
 		local u = "party" .. i
-		if UnitExists(u) then list[#list + 1] = (UnitName(u)) end
+		if UnitExists(u) then list[#list + 1] = ns.UnitFullName(u) end
 	end
 	return list
 end

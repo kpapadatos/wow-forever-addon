@@ -129,7 +129,7 @@ local f = CreateFrame("Frame")
 local EVENTS = {
 	"PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "ENCOUNTER_START", "ENCOUNTER_END", "BOSS_KILL",
 	"GROUP_ROSTER_UPDATE", "GUILD_ROSTER_UPDATE", "CHAT_MSG_ADDON", "PLAYER_GUILD_UPDATE", "INSTANCE_LOCK_START",
-	"UPDATE_INSTANCE_INFO", "LFG_COMPLETION_REWARD", "SCENARIO_COMPLETED", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
+	"UPDATE_INSTANCE_INFO", "LFG_COMPLETION_REWARD", "CHAT_MSG_SYSTEM", "SCENARIO_COMPLETED", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
 }
 f:SetScript("OnEvent", function(_, event, ...)
 	if not ns.db or not ns.db.probeOn then return end
@@ -161,12 +161,17 @@ for _, e in ipairs(EVENTS) do pcall(f.RegisterEvent, f, e) end
 -- self-test of the addon-message path: whisper to myself, and to GUILD/PARTY when possible
 local function commTest()
 	C_ChatInfo.RegisterAddonMessagePrefix("SIMPROBE")
-	local me = UnitName("player")
-	try("send.WHISPER.self", C_ChatInfo.SendAddonMessage, "SIMPROBE", "ping~" .. GetServerTime(), "WHISPER", me)
+	-- name formats: what does the client give us for "Lerius Hillmont"?
+	P:Log("names.UnitName", UnitName("player"))
+	P:Log("names.UnitFullName", UnitFullName and UnitFullName("player"))
+	P:Log("names.GetUnitName", GetUnitName("player", false), GetUnitName("player", true))
+	P:Log("names.realm", GetRealmName(), GetNormalizedRealmName and GetNormalizedRealmName())
+	P:Log("names.ns", ns:PlayerName())
+	-- one self-whisper with the full name (a wrong format prints "No player named ..." in chat)
+	local target = GetUnitName("player", true)
+	try("send.WHISPER.self[" .. tostring(target) .. "]", C_ChatInfo.SendAddonMessage, "SIMPROBE", "ping~" .. GetServerTime(), "WHISPER", target)
 	if IsInGuild() then try("send.GUILD", C_ChatInfo.SendAddonMessage, "SIMPROBE", "ping~guild", "GUILD") end
 	if IsInGroup() then try("send.PARTY", C_ChatInfo.SendAddonMessage, "SIMPROBE", "ping~party", "PARTY") end
-	try("send.long300", C_ChatInfo.SendAddonMessage, "SIMPROBE", ("x"):rep(300), "WHISPER", me)
-	try("send.pipe", C_ChatInfo.SendAddonMessage, "SIMPROBE", "a|b~c,d", "WHISPER", me)
 end
 
 local function guildSnapshot()

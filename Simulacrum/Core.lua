@@ -47,8 +47,45 @@ function ns:Print(msg, ...)
 	DEFAULT_CHAT_FRAME:AddMessage("|cffe6c35cSimulacrum|r: " .. string.format(msg, ...))
 end
 
+-- ---------------------------------------------------------------------------
+-- Names. Forever characters have "First Surname" (surname optional); the
+-- APIs return the surname where other clients return a realm, and only the
+-- full name is unique. Everything in the addon is keyed by ns.NormName().
+-- ---------------------------------------------------------------------------
+local function realmVariants()
+	local r = GetRealmName and GetRealmName() or ""
+	return r, r:gsub("[%s%-]", ""), GetNormalizedRealmName and GetNormalizedRealmName() or ""
+end
+
+function ns.NormName(name)
+	if not name or name == "" then return name end
+	local head, tail = name:match("^([^%-]+)%-(.+)$")
+	if not head then return name end
+	if head:find(" ", 1, true) then return head end -- "First Surname-Realm"
+	local r1, r2, r3 = realmVariants()
+	if tail == r1 or tail == r2 or tail == r3 then return head end -- "First-Realm"
+	return head .. " " .. tail -- "First-Surname": surname reported in the realm slot
+end
+
+-- full name of a unit ("First Surname" or just "First")
+function ns.UnitFullName(unit)
+	local first, second = UnitName(unit)
+	if not first then return nil end
+	if second and second ~= "" then
+		local r1, r2, r3 = realmVariants()
+		if second ~= r1 and second ~= r2 and second ~= r3 then return first .. " " .. second end
+	end
+	return first
+end
+
 function ns:PlayerName()
-	return (UnitName("player"))
+	if not self.playerName then self.playerName = ns.UnitFullName("player") end
+	return self.playerName
+end
+
+-- first name only, for friendly display
+function ns.FirstName(name)
+	return name and (name:match("^(%S+)") or name)
 end
 
 function ns:Sound(kit)
@@ -90,7 +127,7 @@ end
 
 local function onAddonMessage(prefix, msg, channel, sender)
 	if prefix ~= ns.COMM_PREFIX then return end
-	sender = Ambiguate(sender, "none")
+	sender = ns.NormName(sender)
 	if sender == ns:PlayerName() then return end
 	if msg:sub(2, 2) == "~" then
 		-- claims protocol (Claims.lua / master extension): "X~field~field..."

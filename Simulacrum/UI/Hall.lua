@@ -107,7 +107,7 @@ ns:RegisterPage({
 		for _, m in ipairs(ns.MEMBERS) do if m.online then online = online + 1 end end
 		local done = 0
 		for _, g in ipairs(ns.GOALS) do if ns:GoalProgress(g) >= g.max then done = done + 1 end end
-		page.welcome:SetText(("Well met, %s!"):format(ns:PlayerName()))
+		page.welcome:SetText(("Well met, %s!"):format(ns.FirstName(ns:PlayerName())))
 		page.stats:SetText(("|cffffffff%d|r members  -  |cff3cd23c%d|r online  -  |cffffffff%d/%d|r guild goals achieved")
 			:format(#ns.MEMBERS, online, done, #ns.GOALS))
 		local live = IsInGuild() and GetGuildRosterMOTD and GetGuildRosterMOTD()

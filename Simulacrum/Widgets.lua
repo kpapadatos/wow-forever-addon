@@ -195,32 +195,37 @@ function W.Tabs(parent, defs, onSelect)
 	local group = { buttons = {}, selected = nil }
 	local prev
 	for i, def in ipairs(defs) do
-		local b = CreateFrame("Button", nil, parent, BACKDROP_TEMPLATE)
-		b:SetHeight(34)
+		-- flat tab: plain fill, a thin accent line on top of the selected one, no border
+		local b = CreateFrame("Button", nil, parent)
+		b:SetHeight(28)
 		local bg = b:CreateTexture(nil, "BACKGROUND")
-		bg:SetPoint("TOPLEFT", 3, -3)
-		bg:SetPoint("BOTTOMRIGHT", -3, 0)
+		bg:SetAllPoints()
 		b.bg = bg
-		W.Backdrop(b, { edgeFile = M .. "edge_gold", edgeSize = 12 })
+		local accent = b:CreateTexture(nil, "BORDER")
+		accent:SetPoint("TOPLEFT")
+		accent:SetPoint("TOPRIGHT")
+		accent:SetHeight(2)
+		accent:SetColorTexture(0.78, 0.55, 0.18, 1)
+		b.accent = accent
 
 		local icon = b:CreateTexture(nil, "ARTWORK")
-		icon:SetSize(20, 20)
-		icon:SetPoint("LEFT", 10, -1)
+		icon:SetSize(18, 18)
+		icon:SetPoint("LEFT", 9, 0)
 		icon:SetTexture(def.icon)
 		icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 		local fs = W.GoldText(b, 13, W.FONT_TITLE)
 		fs:SetPoint("LEFT", icon, "RIGHT", 6, 0)
 		fs:SetText(def.text)
-		b:SetWidth(fs:GetStringWidth() + 50)
+		b:SetWidth(fs:GetStringWidth() + 44)
 		b.fs, b.icon = fs, icon
 
 		local hl = b:CreateTexture(nil, "HIGHLIGHT")
 		hl:SetAllPoints(bg)
-		W.Gradient(hl, "VERTICAL", 1, 0.8, 0.3, 0, 1, 0.8, 0.3, 0.25)
+		hl:SetColorTexture(1, 0.85, 0.5, 0.12)
 		hl:SetBlendMode("ADD")
 
 		-- bottom-aligned so the selected (taller) tab grows upwards without shifting the row
-		if prev then b:SetPoint("BOTTOMLEFT", prev, "BOTTOMRIGHT", -2, 0) else b:SetPoint("BOTTOMLEFT", 0, 0) end
+		if prev then b:SetPoint("BOTTOMLEFT", prev, "BOTTOMRIGHT", 3, 0) else b:SetPoint("BOTTOMLEFT", 0, 0) end
 		prev = b
 		b:SetScript("OnClick", function() group:Select(i) end)
 		if def.tip then W.Tooltip(b, def.text, def.tip) end
@@ -231,17 +236,19 @@ function W.Tabs(parent, defs, onSelect)
 		self.selected = i
 		for j, b in ipairs(self.buttons) do
 			if j == i then
-				W.Gradient(b.bg, "VERTICAL", 0.93, 0.84, 0.64, 1, 0.70, 0.52, 0.28, 1)
+				b.bg:SetColorTexture(0.85, 0.74, 0.55, 1)
+				b.accent:Show()
 				b.fs:SetTextColor(unpackc(W.C.ink))
 				b.fs:SetShadowColor(0, 0, 0, 0)
 				b.icon:SetDesaturated(false)
-				b:SetHeight(38)
+				b:SetHeight(32)
 			else
-				W.Gradient(b.bg, "VERTICAL", 0.06, 0.04, 0.02, 0.95, 0.22, 0.13, 0.06, 0.95)
+				b.bg:SetColorTexture(0.20, 0.13, 0.07, 0.92)
+				b.accent:Hide()
 				b.fs:SetTextColor(unpackc(W.C.goldDim))
 				b.fs:SetShadowColor(0, 0, 0, 1)
 				b.icon:SetDesaturated(true)
-				b:SetHeight(32)
+				b:SetHeight(28)
 			end
 		end
 		if not silent then ns:Sound(SOUNDKIT and SOUNDKIT.IG_CHARACTER_INFO_TAB or 841) end

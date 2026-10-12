@@ -6,7 +6,7 @@ local function liveRoster()
 	for i = 1, GetNumGuildMembers() do
 		local name, rankName, rankIndex, level, _, zone, note, _, online, _, class = GetGuildRosterInfo(i)
 		if name then
-			name = Ambiguate(name, "none")
+			name = ns.NormName(name)
 			rows[#rows + 1] = { name = name, class = class, level = level, rank = rankIndex + 1, rankName = rankName,
 				zone = zone or "", note = note or "", online = online, dkp = ns:GetDKP(name), live = true }
 		end

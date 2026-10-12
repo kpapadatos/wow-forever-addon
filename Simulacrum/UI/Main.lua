@@ -124,7 +124,6 @@ local function build()
 	foot2:SetJustifyH("RIGHT")
 	foot2:SetText("For the glory of <Simulacrum>")
 
-	W.Corners(frame, 96, -10)
 end
 
 local function updateWho()
