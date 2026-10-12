@@ -67,3 +67,13 @@ Logs to `SimulacrumDB.probe` (ring buffer): API availability, instance info, enc
 - Member side: `Simulacrum/Claims.lua`, `Simulacrum/UI/Claims.lua`, probe in `Simulacrum/Probe.lua` (`/simprobe`, `/simprobe run`, `/simprobe clear`).
 - Master side: private `Simulacrum_Master` addon (kept outside this repo).
 - `/simtest` simulates a qualifying Deadmines run (with the master extension it also simulates the other 4 claims and 3 witnesses).
+
+## Signed ledger (replaces officer notes)
+- Every DKP change is an entry `seq|time|name|amount|reason`, signed by the guild master with RSA-1024 over SHA-256 (pure Lua, `Crypto.lua`). Public key in `LedgerKey.lua`; private key only in the master extension's `Key.lua` (gitignored, back it up).
+- Members verify every entry (≈3 ms) and keep the ledger in SavedVariables; totals = sum of entries. Corrections are new (negative) entries; nothing is ever edited.
+- Sync: `V~head~keyId` announcements (login, after publishing), `G~from~to` requests, `L~...~sig` entries over whispers. Any member can relay; relays cannot forge or alter entries, and gaps in `seq` show what is missing. The master answers peers that are behind; members only answer while the master is offline.
+- Master flow: approved claims and manual awards stay "accepted" until the master saves (/reload). After the reload they become entries (seq from the saved counter, time = kill time), are signed in the background, published and announced, and members get their `D` notification. A crash before the next save regenerates identical entries and signatures.
+- A new key wipes members' ledgers on their next login (key id mismatch).
+
+## Dungeon run recorder (`Runs.lua`)
+`SimulacrumDB.runs`: instance/map/difficulty, encounter-journal boss list (final boss = last; its encounter ID feeds claim detection), encounter start/end, kills with qualification result, loot, group composition, guild-roster zone samples while inside, deaths.

@@ -60,12 +60,43 @@ function ns:GetMember(name)
 	end
 end
 
+-- Live mode: in a real guild, DKP comes from the signed ledger and members from the roster
+function ns:IsLive()
+	return IsInGuild() and self.Ledger ~= nil
+end
+
+function ns:DKPMembers()
+	local out = {}
+	if self:IsLive() then
+		for name, ro in pairs(self.Claims.roster) do
+			out[#out + 1] = { name = name, class = ro.class, dkp = self.Ledger:Total(name), online = ro.online, rank = ro.rank }
+		end
+	else
+		for _, m in ipairs(self.MEMBERS) do
+			out[#out + 1] = { name = m.name, class = m.class, dkp = self:GetDKP(m.name), online = m.online, rank = m.rank }
+		end
+	end
+	return out
+end
+
+function ns:MemberClass(name)
+	local ro = self.Claims and self.Claims.roster[name]
+	if ro then return ro.class end
+	local m = self:GetMember(name)
+	return m and m.class
+end
+
 function ns:GetDKP(name)
+	if self:IsLive() then return self.Ledger:Total(name) end
 	local m = self:GetMember(name)
 	return ((m and m.dkp) or 0) + ((self.db and self.db.dkpAdjust[name]) or 0)
 end
 
 function ns:AwardDKP(name, amount, reason)
+	if self:IsLive() then
+		if self.Master then return self.Master:QueueManual(name, amount, reason) end
+		return self:Print("Only the guild master can award DKP.")
+	end
 	self.db.dkpAdjust[name] = (self.db.dkpAdjust[name] or 0) + amount
 	table.insert(self.db.dkpLog, 1, { time = time(), player = name, amount = amount, reason = reason, by = self:PlayerName() })
 	self:Fire("DKP_CHANGED")

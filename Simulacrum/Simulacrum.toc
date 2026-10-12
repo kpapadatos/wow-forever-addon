@@ -16,6 +16,10 @@ Core.lua
 Data.lua
 Probe.lua
 Claims.lua
+Crypto.lua
+LedgerKey.lua
+Ledger.lua
+Runs.lua
 Widgets.lua
 UI\Main.lua
 UI\Hall.lua

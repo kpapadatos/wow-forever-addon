@@ -83,8 +83,8 @@ ns:RegisterPage({
 			local v = targetSel:GetValue()
 			if v == "one" then return page.selected and { page.selected } or {} end
 			local out = {}
-			for _, m in ipairs(ns.MEMBERS) do
-				if (v == "raid" and m.online) or (v == "raiders" and m.rank <= 3) then out[#out + 1] = m.name end
+			for _, m in ipairs(ns:DKPMembers()) do
+				if (v == "raid" and m.online) or (v == "raiders" and m.rank <= (ns:IsLive() and 2 or 3)) then out[#out + 1] = m.name end
 			end
 			return out
 		end
@@ -112,6 +112,12 @@ ns:RegisterPage({
 			end
 		end)
 		undo:SetPoint("LEFT", deduct, "RIGHT", 8, 0)
+		local formControls = { targetSel, amount, reason, award, deduct, undo }
+		local locked = W.Text(form, 12, W.C.inkSoft)
+		locked:SetPoint("TOPLEFT", 14, -44)
+		locked:SetPoint("RIGHT", -14, 0)
+		locked:SetText("Only the guild master can award DKP. Every award is signed by the guild master's key, so totals cannot be faked - "
+			.. "your addon checks each entry and shares the ledger with other guild members.")
 
 		-- History log ---------------------------------------------------------------
 		local logBox = W.Dark(page, 0.72)
@@ -120,6 +126,16 @@ ns:RegisterPage({
 		local lt = W.GoldText(logBox, 15, W.FONT_TITLE)
 		lt:SetPoint("TOPLEFT", 12, -8)
 		lt:SetText("History")
+		local ledgerStatus = CreateFrame("Frame", nil, logBox)
+		ledgerStatus:SetSize(300, 16)
+		ledgerStatus:SetPoint("TOPRIGHT", -12, -10)
+		ledgerStatus:EnableMouse(true)
+		local ls = W.Text(ledgerStatus, 10, { 0.75, 0.68, 0.55 })
+		ls:SetPoint("RIGHT")
+		ls:SetJustifyH("RIGHT")
+		W.Tooltip(ledgerStatus, "Signed ledger", "Every DKP change is an entry signed by the guild master. Your addon verifies each signature and passes "
+			.. "entries on to guild members who are missing them, so the ledger stays available while the guild master is offline. "
+			.. "A gap in the numbering means some entries have not reached you yet.")
 
 		local list = W.ScrollList(logBox, 440, 264, 22, function(owner)
 			local r = CreateFrame("Frame", nil, owner)
@@ -139,8 +155,7 @@ ns:RegisterPage({
 		end, function(r, e)
 			r.when:SetText(date("%d %b %H:%M", e.time))
 			r.who:SetText(e.player)
-			local m = ns:GetMember(e.player)
-			r.who:SetTextColor(W.ClassColor(m and m.class))
+			r.who:SetTextColor(W.ClassColor(ns:MemberClass(e.player)))
 			r.amt:SetText((e.amount > 0 and "+" or "") .. e.amount)
 			r.amt:SetTextColor(e.amount > 0 and 0.3 or 1, e.amount > 0 and 0.9 or 0.3, 0.3)
 			r.why:SetText(e.reason)
@@ -149,20 +164,24 @@ ns:RegisterPage({
 
 		function page:Select(name)
 			self.selected = name
-			local m = ns:GetMember(name)
-			local _, l, r, t, b = W.ClassIcon(m and m.class)
+			local _, l, r, t, b = W.ClassIcon(ns:MemberClass(name))
 			who:SetText(name and ("Selected: |TInterface\\TargetingFrame\\UI-Classes-Circles:16:16:0:0:256:256:%d:%d:%d:%d|t |cff3a1f05%s|r")
 				:format(l * 256, r * 256, t * 256, b * 256, name) or "")
 			for _, b in ipairs(bars) do b.sel:SetShown(b.member == name) end
 		end
 
 		function page:Update()
-			local sorted = {}
-			for _, m in ipairs(ns.MEMBERS) do sorted[#sorted + 1] = { name = m.name, class = m.class, dkp = ns:GetDKP(m.name) } end
-			table.sort(sorted, function(a, b) return a.dkp > b.dkp end)
-			local top = math.max(1, sorted[1].dkp)
+			local live = ns:IsLive()
+			local canAward = not live or ns.isMaster
+			for _, c in ipairs(formControls) do c:SetShown(canAward and not (live and c == undo)) end
+			locked:SetShown(not canAward)
+			local sorted = ns:DKPMembers()
+			table.sort(sorted, function(a, b) if a.dkp ~= b.dkp then return a.dkp > b.dkp end return a.name < b.name end)
+			local top = math.max(1, sorted[1] and sorted[1].dkp or 1)
 			for i, b in ipairs(bars) do
 				local s = sorted[i]
+				b:SetShown(s ~= nil)
+				s = s or { name = "", dkp = 0 }
 				b.member = s.name
 				b.rank:SetText(i)
 				b.icon:SetTexture(W.ClassIcon(s.class))
@@ -174,18 +193,29 @@ ns:RegisterPage({
 				b.val:SetText(s.dkp)
 				b.sel:SetShown(s.name == self.selected)
 			end
-			-- history: my edits first, then the seeded entries
 			local log = {}
-			for _, e in ipairs(ns.db.dkpLog) do log[#log + 1] = e end
-			local now = time()
-			for _, e in ipairs(ns.SEED_LOG) do
-				log[#log + 1] = { time = now - e.ago * 86400 - 3600 * 3, player = e.player, amount = e.amount, reason = e.reason }
+			if live then
+				for _, e in ipairs(ns.Ledger:Entries()) do
+					log[#log + 1] = { time = e.time, player = e.name, amount = e.amount, reason = ("#%d  %s"):format(e.seq, e.reason) }
+				end
+				local gap = ns.Ledger:FirstGap()
+				ls:SetText(("|TInterface\\RaidFrame\\ReadyCheck-Ready:12|t %d signed entries  -  head #%d%s"):format(
+					ns.Ledger:Count(), ns.Ledger:Head(), gap and ("  -  |cffff8040missing #" .. gap .. "|r") or ""))
+			else
+				-- demo: my edits first, then the seeded entries
+				for _, e in ipairs(ns.db.dkpLog) do log[#log + 1] = e end
+				local now = time()
+				for _, e in ipairs(ns.SEED_LOG) do
+					log[#log + 1] = { time = now - e.ago * 86400 - 3600 * 3, player = e.player, amount = e.amount, reason = e.reason }
+				end
+				ls:SetText("demo data (not in a guild)")
 			end
 			list:SetData(log)
 		end
 
 		ns:On("DKP_CHANGED", function() if page:IsVisible() then page:Update() end end)
-		page:Select(ns:GetMember(ns:PlayerName()) and ns:PlayerName() or "Draven")
+		ns:On("LEDGER_CHANGED", function() if page:IsVisible() then page:Update() end end)
+		page:Select(ns:IsLive() and ns:PlayerName() or (ns:GetMember(ns:PlayerName()) and ns:PlayerName() or "Draven"))
 	end,
 	onShow = function(page) page:Update() end,
 })
