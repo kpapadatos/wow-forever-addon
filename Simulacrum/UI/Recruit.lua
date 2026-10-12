@@ -23,7 +23,7 @@ local function label(parent, text, anchor, x, y)
 end
 
 ns:RegisterPage({
-	text = "Recruitment",
+	text = "Recruit",
 	icon = "Interface\\Icons\\INV_Letter_02",
 	tip = "Application form and pending applicants",
 	build = function(page)

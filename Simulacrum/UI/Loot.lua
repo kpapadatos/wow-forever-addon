@@ -96,7 +96,7 @@ local function makeItemRow(parent)
 end
 
 ns:RegisterPage({
-	text = "Loot & Wishlist",
+	text = "Loot",
 	icon = "Interface\\Icons\\INV_Box_01",
 	tip = "Browse dungeon drops and declare interest - like AtlasLoot, with your guild",
 	build = function(page)

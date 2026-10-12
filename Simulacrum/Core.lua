@@ -92,6 +92,11 @@ local function onAddonMessage(prefix, msg, channel, sender)
 	if prefix ~= ns.COMM_PREFIX then return end
 	sender = Ambiguate(sender, "none")
 	if sender == ns:PlayerName() then return end
+	if msg:sub(2, 2) == "~" then
+		-- claims protocol (Claims.lua / master extension): "X~field~field..."
+		ns:Fire("COMM", msg:sub(1, 1), { strsplit("~", msg:sub(3)) }, channel, sender)
+		return
+	end
 	local cmd, a, b = strsplit(":", msg)
 	if cmd == "I" then
 		local itemID = tonumber(a)

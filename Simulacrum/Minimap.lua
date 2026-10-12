@@ -9,7 +9,7 @@ local launcher = LDB:NewDataObject("Simulacrum", {
 	icon = ns.media .. "icon",
 	OnClick = function(_, button)
 		if button == "RightButton" then
-			ns:Toggle(#ns.pages) -- settings
+			for i, p in ipairs(ns.pages) do if p.text == "Settings" then ns:Toggle(i) end end
 		else
 			ns:Toggle()
 		end

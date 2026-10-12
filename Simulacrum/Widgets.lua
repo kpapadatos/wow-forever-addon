@@ -72,7 +72,6 @@ end
 -- ---------------------------------------------------------------------------
 -- Frames
 -- ---------------------------------------------------------------------------
-local GOLD_EDGE = { edgeFile = M .. "edge_gold", edgeSize = 24 }
 
 function W.GoldBorder(frame, size)
 	W.Backdrop(frame, { edgeFile = M .. "edge_gold", edgeSize = size or 24 })
@@ -101,17 +100,11 @@ function W.Parchment(parent, name)
 	local f = CreateFrame("Frame", name, parent, BACKDROP_TEMPLATE)
 	local bg = f:CreateTexture(nil, "BACKGROUND")
 	bg:SetTexture(M .. "parchment")
-	bg:SetPoint("TOPLEFT", 8, -8)
-	bg:SetPoint("BOTTOMRIGHT", -8, 8)
+	bg:SetPoint("TOPLEFT", 10, -10)
+	bg:SetPoint("BOTTOMRIGHT", -10, 10)
 	f.bg = bg
-	W.Backdrop(f, GOLD_EDGE)
-	-- drop shadow
-	local sh = CreateFrame("Frame", nil, f, BACKDROP_TEMPLATE)
-	sh:SetPoint("TOPLEFT", -14, 14)
-	sh:SetPoint("BOTTOMRIGHT", 14, -14)
-	sh:SetFrameLevel(math.max(0, f:GetFrameLevel() - 1))
-	W.Backdrop(sh, { edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16, bgFile = M .. "white",
-		insets = { left = 12, right = 12, top = 12, bottom = 12 } }, { 0, 0, 0, 0.35 }, { 0, 0, 0, 0.6 })
+	-- classic dialog border, tinted towards gold
+	W.Backdrop(f, { edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 32 }, nil, { 1, 0.86, 0.55, 1 })
 	return f
 end
 
@@ -168,39 +161,19 @@ end
 -- Button
 -- ---------------------------------------------------------------------------
 function W.Button(parent, text, width, height, onClick)
-	local b = CreateFrame("Button", nil, parent, BACKDROP_TEMPLATE)
-	b:SetSize(width or 120, height or 26)
-	local bg = b:CreateTexture(nil, "BACKGROUND")
-	bg:SetPoint("TOPLEFT", 3, -3)
-	bg:SetPoint("BOTTOMRIGHT", -3, 3)
-	W.Gradient(bg, "VERTICAL", 0.30, 0.05, 0.03, 1, 0.58, 0.12, 0.06, 1)
-	b.bg = bg
-	W.Backdrop(b, { edgeFile = M .. "edge_gold", edgeSize = 10 })
-
-	local hl = b:CreateTexture(nil, "HIGHLIGHT")
-	hl:SetTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
-	hl:SetTexCoord(0, 0.625, 0, 0.6875)
-	hl:SetBlendMode("ADD")
-	hl:SetAllPoints(bg)
-
-	local fs = W.GoldText(b, 12)
-	fs:SetPoint("CENTER", 0, 0)
-	fs:SetJustifyH("CENTER")
-	fs:SetText(text)
-	b:SetFontString(fs)
-	b.text = fs
-
-	b:SetScript("OnMouseDown", function(self) if self:IsEnabled() then fs:SetPoint("CENTER", 1, -1) end end)
-	b:SetScript("OnMouseUp", function() fs:SetPoint("CENTER", 0, 0) end)
+	-- the game's own red panel button (gold text, red background)
+	local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+	b:SetSize(width or 120, height or 24)
+	b:SetText(text)
+	b.text = b:GetFontString()
 	b:SetScript("OnClick", function(self, ...)
 		ns:Sound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION or 852)
 		if onClick then onClick(self, ...) end
 	end)
-	hooksecurefunc(b, "Disable", function() fs:SetTextColor(0.5, 0.45, 0.4); bg:SetDesaturated(true) end)
-	hooksecurefunc(b, "Enable", function() fs:SetTextColor(unpackc(W.C.gold)); bg:SetDesaturated(false) end)
 	return b
 end
 
+-- ---------------------------------------------------------------------------
 -- Small square icon button (used in toolbars)
 function W.IconButton(parent, size, texture, tip, onClick)
 	local b = CreateFrame("Button", nil, parent)
@@ -246,7 +219,8 @@ function W.Tabs(parent, defs, onSelect)
 		W.Gradient(hl, "VERTICAL", 1, 0.8, 0.3, 0, 1, 0.8, 0.3, 0.25)
 		hl:SetBlendMode("ADD")
 
-		if prev then b:SetPoint("LEFT", prev, "RIGHT", -2, 0) else b:SetPoint("BOTTOMLEFT", 0, 0) end
+		-- bottom-aligned so the selected (taller) tab grows upwards without shifting the row
+		if prev then b:SetPoint("BOTTOMLEFT", prev, "BOTTOMRIGHT", -2, 0) else b:SetPoint("BOTTOMLEFT", 0, 0) end
 		prev = b
 		b:SetScript("OnClick", function() group:Select(i) end)
 		if def.tip then W.Tooltip(b, def.text, def.tip) end

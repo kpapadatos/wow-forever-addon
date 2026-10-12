@@ -14,12 +14,15 @@ Libs\LibDBIcon-1.0\lib.xml
 
 Core.lua
 Data.lua
+Probe.lua
+Claims.lua
 Widgets.lua
 UI\Main.lua
 UI\Hall.lua
 UI\Goals.lua
 UI\Roster.lua
 UI\DKP.lua
+UI\Claims.lua
 UI\Loot.lua
 UI\Recruit.lua
 UI\Settings.lua

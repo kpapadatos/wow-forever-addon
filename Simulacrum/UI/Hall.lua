@@ -16,7 +16,7 @@ local function section(parent, title, width, height)
 end
 
 ns:RegisterPage({
-	text = "Guild Hall",
+	text = "Hall",
 	icon = "Interface\\Icons\\INV_Misc_Book_11",
 	tip = "Welcome, message of the day and guild chronicle",
 	build = function(page)
