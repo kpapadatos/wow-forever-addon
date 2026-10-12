@@ -135,6 +135,9 @@ f:SetScript("OnEvent", function(_, event, ...)
 	if not ns.db or not ns.db.probeOn then return end
 	if event == "GUILD_ROSTER_UPDATE" then
 		rosterSnapshot(false)
+	elseif event == "CHAT_MSG_SYSTEM" then
+		local text = ...
+		if text and (text:find("No player named") or text:find("not online")) then P:Log("ev.CHAT_MSG_SYSTEM", text) end
 	elseif event == "CHAT_MSG_ADDON" then
 		local prefix = ...
 		if prefix == ns.COMM_PREFIX or prefix == "SIMPROBE" then P:Log("ev.CHAT_MSG_ADDON", ...) end
@@ -211,4 +214,34 @@ SlashCmdList.SIMPROBE = function(msg)
 		ns.db.probeOn = not ns.db.probeOn
 		ns:Print("probe %s", ns.db.probeOn and "ON" or "OFF")
 	end
+end
+
+-- no-space variants (remote typing can't send spaces)
+SLASH_SIMPRUN1 = "/simprun"
+SlashCmdList.SIMPRUN = function() SlashCmdList.SIMPROBE("run") end
+
+-- officer note write test on my own roster entry
+-- RESULT 2026-10-12: forbidden (ADDON_ACTION_FORBIDDEN + "blocked" popup). Do not run again.
+SLASH_SIMNOTE1 = "/simnote"
+SlashCmdList.SIMNOTE = function()
+	if true then ns:Print("officer notes are protected on Forever - test disabled"); return end
+	if not IsInGuild() then ns:Print("not in a guild"); return end
+	local me = ns:PlayerName()
+	for i = 1, GetNumGuildMembers() do
+		local r = pack(GetGuildRosterInfo(i))
+		if ns.NormName(r[1]) == me then
+			P:Log("note.before", r[1], "officer=", r[8], "public=", r[7], "guid=", r[17])
+			P:Log("note.canEdit", C_GuildInfo.CanEditOfficerNote and C_GuildInfo.CanEditOfficerNote())
+			try("note.SetNote", C_GuildInfo.SetNote, r[17], "DKP:0", false)
+			C_GuildInfo.GuildRoster()
+			C_Timer.After(4, function()
+				local after = pack(GetGuildRosterInfo(i))
+				P:Log("note.after", after[1], "officer=", after[8])
+				ns:Print("officer note now: %s", tostring(after[8]))
+			end)
+			return
+		end
+	end
+	P:Log("note.notFound", me)
+	ns:Print("could not find myself (%s) in the roster", me)
 end

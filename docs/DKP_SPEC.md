@@ -58,7 +58,10 @@ Logs to `SimulacrumDB.probe` (ring buffer): API availability, instance info, enc
 - `string.dump`/`debug.getinfo` missing confirms an addon cannot fingerprint its own code.
 - Server time equals local time on this machine (not something to rely on for other players).
 - `/reload` clears the chat window (observed).
-- Still to verify in a real guild + dungeon run: roster zone for members inside an instance, `ENCOUNTER_END` IDs for each final boss, chat lockdown timing, addon-message delivery on GUILD/PARTY.
+- **Officer notes cannot be written by addons**: `C_GuildInfo.SetNote` raises `ADDON_ACTION_FORBIDDEN` (and the "blocked from an action only available to the Blizzard UI" popup), even from a slash command. R5.6 must change: the master's SavedVariables ledger is the source of truth; officer notes can only be a manual mirror.
+- Guild roster (real guild, 10 members): names are full "First Surname" without realm, zone and online state are present, rank index 0 = GM, GUIDs span connected realms (Player-4613-..., Player-4619-...). `IsGuildLeader`, `CanEditOfficerNote`, `CanViewOfficerNote` all true for the GM.
+- Addon-message sender is the full name ("Lerius Hillmont"), whispering by full name works, GUILD sends return success.
+- Still to verify in a real dungeon run with addon users: roster zone for members inside an instance, `ENCOUNTER_END` IDs for each final boss, chat lockdown timing, addon-message delivery on GUILD/PARTY.
 
 ## Implementation
 - Member side: `Simulacrum/Claims.lua`, `Simulacrum/UI/Claims.lua`, probe in `Simulacrum/Probe.lua` (`/simprobe`, `/simprobe run`, `/simprobe clear`).
