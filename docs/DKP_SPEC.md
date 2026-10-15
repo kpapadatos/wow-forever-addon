@@ -77,3 +77,12 @@ Logs to `SimulacrumDB.probe` (ring buffer): API availability, instance info, enc
 
 ## Dungeon run recorder (`Runs.lua`)
 `SimulacrumDB.runs`: instance/map/difficulty, encounter-journal boss list (final boss = last; its encounter ID feeds claim detection), encounter start/end, kills with qualification result, loot, group composition, guild-roster zone samples while inside, deaths.
+
+## Dungeon findings (Hall of Thanes pug run, build 70374, 2026-10-15)
+- **Roster zone works for location checks**: while inside, the guild roster reported "The Hall of Thanes" for me in every 60 s sample, identical to `GetInstanceInfo()` name (note the "The"). After dying and releasing it showed "Ironforge" (graveyard) - so a master check should accept any in-zone observation within the window, not require the latest one.
+- Instance map ID 3065. Encounters: Faldrim Anvilmar 3493, Plunder 3494, Infurnus 3495 (Durgen Dirgehammer not reached). `ENCOUNTER_START/END` fire with success=1 and a 6th table argument.
+- **No chat lockdown in 5-player dungeons**: `InChatMessagingLockdown()` was false at start, end, +1/3/6/15 s of every boss.
+- `C_Map.GetBestMapForUnit("player")` returns nil inside the dungeon, so the journal lookup needs `EJ_GetCurrentInstance()`.
+- Party `UnitName` gives "First-Surname"-style values (surname in realm slot) - handled by `ns.UnitFullName`.
+- Group loot uses loot-history chat lines (selected Need/Greed, rolls, winner), parsed into `kind/who/choice/roll`.
+- No values were secret in the dungeon. One Lua error popup appeared on an older build (before error capture); 0 errors logged since.

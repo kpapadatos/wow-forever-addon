@@ -22,6 +22,14 @@ C.GROUP_SIZE = 5
 
 -- Final bosses. Encounter IDs get filled in from probe data; names are the English fallback.
 C.FINAL_ENCOUNTERS = {}
+-- Encounter IDs seen on Forever (beta 70374, 2026-10-15). Hall of Thanes is map 3065:
+-- Faldrim Anvilmar 3493, Plunder 3494, Infurnus 3495 (none of them final).
+C.KNOWN_ENCOUNTERS = {
+	[3493] = { map = 3065, name = "Faldrim Anvilmar" },
+	[3494] = { map = 3065, name = "Plunder" },
+	[3495] = { map = 3065, name = "Infurnus" },
+}
+
 C.FINAL_BOSS_NAMES = {
 	["Edwin VanCleef"] = true, ["Archmage Arugal"] = true, ["Durgen Dirgehammer"] = true,
 	["Rath'mael"] = true, ["Mutanus the Devourer"] = true, ["High Inquisitor Whitemane"] = true,
@@ -117,10 +125,16 @@ local function join(...) return table.concat({ ... }, "~") end
 -- ---------------------------------------------------------------------------
 C.partyAddon = {}
 
+-- debounced: GROUP_ROSTER_UPDATE fires in bursts while a group forms
+local pingTimer
 function C:PingParty()
-	wipe(self.partyAddon)
-	self.partyAddon[ns:PlayerName()] = ns.version
-	if IsInGroup() and not IsInRaid() then self:Send(join("Q", ns.version), "PARTY") end
+	if pingTimer then pingTimer:Cancel() end
+	pingTimer = C_Timer.NewTimer(3, function()
+		pingTimer = nil
+		wipe(self.partyAddon)
+		self.partyAddon[ns:PlayerName()] = ns.version
+		if IsInGroup() and not IsInRaid() then self:Send(join("Q", ns.version), "PARTY") end
+	end)
 end
 
 -- ---------------------------------------------------------------------------

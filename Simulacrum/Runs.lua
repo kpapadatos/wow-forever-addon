@@ -17,9 +17,14 @@ local function now() return GetServerTime() end
 -- Encounter journal: ordered boss list for the current instance; last one = final boss
 function R:JournalBosses()
 	if not (EJ_GetInstanceForMap and EJ_SelectInstance and EJ_GetEncounterInfoByIndex) then return nil, "no EJ API" end
+	-- inside Forever dungeons C_Map.GetBestMapForUnit returns nil (2026-10-15), so try the
+	-- journal's own "current instance" first
 	local uiMap = C_Map.GetBestMapForUnit("player")
-	local jid = uiMap and EJ_GetInstanceForMap(uiMap)
-	if not jid or jid == 0 then return nil, "no journal instance for map " .. tostring(uiMap) end
+	local jid = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+	if (not jid or jid == 0) and uiMap then jid = EJ_GetInstanceForMap(uiMap) end
+	if not jid or jid == 0 then
+		return nil, ("no journal instance (uiMap %s, EJ_GetCurrentInstance %s)"):format(tostring(uiMap), tostring(EJ_GetCurrentInstance ~= nil))
+	end
 	local ok, err = pcall(EJ_SelectInstance, jid)
 	if not ok then return nil, err end
 	local list = {}
@@ -105,6 +110,30 @@ function R:SampleZone()
 	end)
 end
 
+-- Forever group loot arrives as "loot history" lines (2026-10-15):
+--   "[Loot]: Kias Shadeleaf has selected Greed for: [item]"   "[Loot]: You have selected Greed for: [item]"
+--   "[Loot]: Need Roll - 99 for [item] by Arthenus Grimore"    "[Loot]: Arthenus Grimore won: [item]"
+--   "Arthenus Grimore receives loot: [item]."
+function R.ParseLootLine(e, text)
+	local plain = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn.-:", ""):gsub("|r", "")
+	plain = plain:gsub("^%[Loot%]: ", "")
+	local who, choice = plain:match("^(.-) ha[sv]e? selected (%a+) for:")
+	if who then
+		e.kind, e.who, e.choice = "choice", who == "You" and ns:PlayerName() or who, choice
+		return
+	end
+	local rollType, roll, by = plain:match("^(%a+) Roll %- (%d+) for .- by (.+)$")
+	if rollType then
+		e.kind, e.choice, e.roll, e.who = "roll", rollType, tonumber(roll), by
+		return
+	end
+	who = plain:match("^(.-) won: ")
+	if who then e.kind, e.who = "won", who == "You" and ns:PlayerName() or who return end
+	who = plain:match("^(.-) receives? loot: ")
+	if who then e.kind, e.who = "receive", who == "You" and ns:PlayerName() or who return end
+	e.kind = "other"
+end
+
 local function inDungeon()
 	local inInstance, kind = IsInInstance()
 	return inInstance and (kind == "party" or kind == "raid" or kind == "scenario")
@@ -130,6 +159,10 @@ f:SetScript("OnEvent", ns.Safe("Runs", function(_, event, ...)
 		return
 	elseif event == "ENCOUNTER_START" then
 		R:Event("encounterStart", ...)
+		if not R.current.journal then
+			local bosses, info = R:JournalBosses()
+			if bosses then R.current.journal, R.current.journalInstance = bosses, info end
+		end
 	elseif event == "ENCOUNTER_END" then
 		local encID, encName, difficulty, size, success = clean((...)), clean((select(2, ...))), clean((select(3, ...))), clean((select(4, ...))), clean((select(5, ...)))
 		R:Event("encounterEnd", encID, encName, difficulty, size, success)
@@ -152,7 +185,9 @@ f:SetScript("OnEvent", ns.Safe("Runs", function(_, event, ...)
 		end
 		local link = text and text:match("|H(item:[^|]+)|h")
 		local id = link and tonumber(link:match("item:(%d+)"))
-		R.current.loot[#R.current.loot + 1] = { t = GetServerTime(), who = ns.NormName(playerName ~= "" and playerName or nil) or "?", item = id, text = text }
+		local entry = { t = GetServerTime(), who = ns.NormName(playerName ~= "" and playerName or nil) or "?", item = id, text = text }
+		R.ParseLootLine(entry, text or "")
+		R.current.loot[#R.current.loot + 1] = entry
 	elseif event == "LOOT_OPENED" then
 		local items = {}
 		for i = 1, GetNumLootItems() do

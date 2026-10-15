@@ -163,7 +163,7 @@ ns.DUNGEONS = {
 	{ key = "hot", name = "Hall of Thanes",         level = "13 - 18", size = 5, image = "hot", forever = true,
 	  lore = "Deep within the mountain the dwarven thanes of old lie restless, and Durgen Dirgehammer guards their tomb.",
 	  bosses = {
-		{ name = "Magmatus",           items = { 270230, 270231, 271095 } },
+		{ name = "Infurnus",           items = { 270230, 270231, 271095 } },
 		{ name = "Plunder",            items = { 270228, 270229, 271098 } },
 		{ name = "Durgen Dirgehammer", items = { 270256, 270260, 270261 } },
 		{ name = "Trash",              items = { 270227, 271096, 271097 } },
