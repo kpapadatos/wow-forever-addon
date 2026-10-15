@@ -32,6 +32,38 @@ local function applyDefaults(dst, src)
 end
 
 -- ---------------------------------------------------------------------------
+-- Error capture. Every event handler runs through ns.Safe: errors never pop
+-- up in the player's face, they are stored in SimulacrumDB.errors (with a
+-- stack) for later inspection and announced once in chat.
+-- ---------------------------------------------------------------------------
+local pendingErrors, warned = {}, false
+
+-- Forever (Midnight API) hides some values from addons during encounters
+function ns.IsSecret(v)
+	return issecretvalue ~= nil and issecretvalue(v) or false
+end
+
+local function recordError(tag, err)
+	local e = { t = date("%Y-%m-%d %H:%M:%S"), tag = tag, err = tostring(err), stack = debugstack and debugstack(3, 12, 0) or "" }
+	local store = ns.db and ns.db.errors or pendingErrors
+	table.insert(store, e)
+	if #store > 60 then table.remove(store, 1) end
+	if not warned then
+		warned = true
+		DEFAULT_CHAT_FRAME:AddMessage(("|cffe6c35cSimulacrum|r: |cffff6060an internal error was caught and logged (%s). Play on - it is saved for debugging.|r"):format(tag))
+	end
+end
+ns.RecordError = recordError
+
+function ns.Safe(tag, fn)
+	return function(...)
+		local n, args = select("#", ...), { ... }
+		local ok, err = xpcall(function() return fn(unpack(args, 1, n)) end, function(e) return e end)
+		if not ok then recordError(tag, err) end
+	end
+end
+
+-- ---------------------------------------------------------------------------
 -- Tiny callback bus so UI tabs can react to data changes
 -- ---------------------------------------------------------------------------
 local listeners = {}
@@ -40,7 +72,10 @@ function ns:On(event, fn)
 	table.insert(listeners[event], fn)
 end
 function ns:Fire(event, ...)
-	for _, fn in ipairs(listeners[event] or {}) do fn(...) end
+	for _, fn in ipairs(listeners[event] or {}) do
+		local ok, err = pcall(fn, ...)
+		if not ok then recordError("Fire:" .. event, err) end
+	end
 end
 
 function ns:Print(msg, ...)
@@ -126,6 +161,7 @@ function ns:MyInterest(itemID)
 end
 
 local function onAddonMessage(prefix, msg, channel, sender)
+	if ns.IsSecret(prefix) or ns.IsSecret(msg) or ns.IsSecret(sender) then return end
 	if prefix ~= ns.COMM_PREFIX then return end
 	sender = ns.NormName(sender)
 	if sender == ns:PlayerName() then return end
@@ -156,11 +192,14 @@ f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 f:RegisterEvent("GUILD_ROSTER_UPDATE")
-f:SetScript("OnEvent", function(_, event, ...)
+f:SetScript("OnEvent", ns.Safe("Core", function(_, event, ...)
 	if event == "ADDON_LOADED" and ... == ADDON then
 		SimulacrumDB = SimulacrumDB or {}
 		applyDefaults(SimulacrumDB, DEFAULTS)
 		ns.db = SimulacrumDB
+		ns.db.errors = ns.db.errors or {}
+		for _, e in ipairs(pendingErrors) do table.insert(ns.db.errors, e) end
+		wipe(pendingErrors)
 		if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
 			C_ChatInfo.RegisterAddonMessagePrefix(ns.COMM_PREFIX)
 		end
@@ -176,7 +215,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 	elseif event == "GUILD_ROSTER_UPDATE" then
 		ns:Fire("GUILD_ROSTER")
 	end
-end)
+end))
 
 -- dev helpers (no spaces so they're easy to type from automation)
 SLASH_SIMSHOT1 = "/simshot"

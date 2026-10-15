@@ -72,10 +72,16 @@ function R:Stop()
 	ns.db.dirty = true
 end
 
+local function clean(v)
+	if ns.IsSecret(v) then return "<secret>" end
+	return v
+end
+
 function R:Event(kind, ...)
 	local run = self.current
 	if not run then return end
-	local e = { t = now(), kind = kind, ... }
+	local e = { t = now(), kind = kind }
+	for i = 1, select("#", ...) do e[i] = clean((select(i, ...))) end
 	run.events[#run.events + 1] = e
 	ns.db.dirty = true
 	if ns.Probe then ns.Probe:Log("run." .. kind, ...) end
@@ -108,7 +114,7 @@ local f = CreateFrame("Frame")
 for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "ENCOUNTER_START", "ENCOUNTER_END", "BOSS_KILL",
 	"CHAT_MSG_LOOT", "GROUP_ROSTER_UPDATE", "PLAYER_DEAD", "LOOT_OPENED" }) do pcall(f.RegisterEvent, f, e) end
 
-f:SetScript("OnEvent", function(_, event, ...)
+f:SetScript("OnEvent", ns.Safe("Runs", function(_, event, ...)
 	if not ns.db then return end
 	if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
 		local mapID = select(8, GetInstanceInfo())
@@ -125,9 +131,9 @@ f:SetScript("OnEvent", function(_, event, ...)
 	elseif event == "ENCOUNTER_START" then
 		R:Event("encounterStart", ...)
 	elseif event == "ENCOUNTER_END" then
-		local encID, encName, difficulty, size, success = ...
+		local encID, encName, difficulty, size, success = clean((...)), clean((select(2, ...))), clean((select(3, ...))), clean((select(4, ...))), clean((select(5, ...)))
 		R:Event("encounterEnd", encID, encName, difficulty, size, success)
-		if success == 1 then
+		if success == 1 and encName ~= "<secret>" then
 			local ok, checks = C:Qualification(encID, encName)
 			local failed = {}
 			for _, ch in ipairs(checks) do if not ch.ok then failed[#failed + 1] = ch.label end end
@@ -140,6 +146,10 @@ f:SetScript("OnEvent", function(_, event, ...)
 		R:Event("bossKill", ...)
 	elseif event == "CHAT_MSG_LOOT" then
 		local text, _, _, _, playerName = ...
+		if ns.IsSecret(text) or ns.IsSecret(playerName) then
+			R:Event("lootSecret")
+			return
+		end
 		local link = text and text:match("|H(item:[^|]+)|h")
 		local id = link and tonumber(link:match("item:(%d+)"))
 		R.current.loot[#R.current.loot + 1] = { t = GetServerTime(), who = ns.NormName(playerName ~= "" and playerName or nil) or "?", item = id, text = text }
@@ -155,7 +165,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 	elseif event == "PLAYER_DEAD" then
 		R:Event("death")
 	end
-end)
+end))
 
 -- sample the roster zone every 60s while inside
 C_Timer.NewTicker(60, function() if R.current then R:SampleZone() end end)

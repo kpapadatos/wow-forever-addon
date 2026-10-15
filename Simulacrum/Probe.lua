@@ -11,6 +11,7 @@ ns.Probe = P
 
 local function ser(v, depth)
 	depth = depth or 0
+	if ns.IsSecret(v) then return "<secret>" end
 	local t = type(v)
 	if t == "table" then
 		if depth > 2 then return "{...}" end
@@ -131,15 +132,16 @@ local EVENTS = {
 	"GROUP_ROSTER_UPDATE", "GUILD_ROSTER_UPDATE", "CHAT_MSG_ADDON", "PLAYER_GUILD_UPDATE", "INSTANCE_LOCK_START",
 	"UPDATE_INSTANCE_INFO", "LFG_COMPLETION_REWARD", "CHAT_MSG_SYSTEM", "SCENARIO_COMPLETED", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
 }
-f:SetScript("OnEvent", function(_, event, ...)
+f:SetScript("OnEvent", ns.Safe("Probe", function(_, event, ...)
 	if not ns.db or not ns.db.probeOn then return end
 	if event == "GUILD_ROSTER_UPDATE" then
 		rosterSnapshot(false)
 	elseif event == "CHAT_MSG_SYSTEM" then
 		local text = ...
-		if text and (text:find("No player named") or text:find("not online")) then P:Log("ev.CHAT_MSG_SYSTEM", text) end
+		if text and not ns.IsSecret(text) and (text:find("No player named") or text:find("not online")) then P:Log("ev.CHAT_MSG_SYSTEM", text) end
 	elseif event == "CHAT_MSG_ADDON" then
 		local prefix = ...
+		if ns.IsSecret(prefix) then return end
 		if prefix == ns.COMM_PREFIX or prefix == "SIMPROBE" then P:Log("ev.CHAT_MSG_ADDON", ...) end
 	else
 		P:Log("ev." .. event, ...)
@@ -158,7 +160,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 			end
 		end
 	end
-end)
+end))
 for _, e in ipairs(EVENTS) do pcall(f.RegisterEvent, f, e) end
 
 -- self-test of the addon-message path: whisper to myself, and to GUILD/PARTY when possible

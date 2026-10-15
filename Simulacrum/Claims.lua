@@ -327,9 +327,10 @@ ev:RegisterEvent("ENCOUNTER_END")
 ev:RegisterEvent("GROUP_ROSTER_UPDATE")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("GUILD_ROSTER_UPDATE")
-ev:SetScript("OnEvent", function(_, event, ...)
+ev:SetScript("OnEvent", ns.Safe("Claims", function(_, event, ...)
 	if not ns.db then return end
 	if event == "ENCOUNTER_END" then
+		for i = 1, select("#", ...) do if ns.IsSecret((select(i, ...))) then return end end
 		C:OnEncounterEnd(...)
 	elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
 		C_Timer.After(1, function() C:PingParty() end)
@@ -341,7 +342,7 @@ ev:SetScript("OnEvent", function(_, event, ...)
 		masterWasOnline = online
 		ns:Fire("CLAIMS_CHANGED")
 	end
-end)
+end))
 
 ns:On("DB_READY", function()
 	ns.db.claims = ns.db.claims or {}
